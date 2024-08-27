@@ -23,17 +23,34 @@ import EventScreen from './screens/EventScreen';
 import NewEventScreen from './screens/NewEventScreen'
 
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
+/* import { configureStore } from '@reduxjs/toolkit'; */
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStore, persistReducer } from 'redux-persist';
+import { PersistGate } from 'redux-persist/integration/react';
+/* import storage from 'redux-persist/lib/storage'; */
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+
 import user from './reducers/user';
 import places from './reducers/places';
 import event from "./reducers/event";
 
 import { useSelector } from 'react-redux';
 
+/* const store = configureStore({
+  reducer: { user, places, event},
+}); */
+
+const reducers = combineReducers({ user, places, event });
+
+const persistConfig = { key: 'dogaround', storage: AsyncStorage };
 
 const store = configureStore({
-  reducer: { user, places, event},
+  reducer: persistReducer(persistConfig, reducers),
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }),
 });
+
+const persistor = persistStore(store);
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -41,7 +58,7 @@ const Tab = createBottomTabNavigator();
 //Configuration tab navigation
 const TabNavigator = () => {
   const user = useSelector((state) => state.user.value); //Recuperation paramètres de l'utilsateur stocké dans le STORE
-  
+
   return (
     <Tab.Navigator screenOptions={({ route }) => ({
       tabBarIcon: ({ color, size }) => {
@@ -56,9 +73,9 @@ const TabNavigator = () => {
         } else if (route.name === 'Chat') {
           iconName = 'comment';
           return (
-            <View style={{ flexDirection:"row" }}>
+            <View style={{ flexDirection: "row" }}>
               <FontAwesome name={iconName} size={size} color={color} />
-              {(user.pastilleMessage)&&<View style={{ width: 10, height: 10, backgroundColor: '#F00', borderRadius: 50}}></View>}
+              {(user.pastilleMessage) && <View style={{ width: 10, height: 10, backgroundColor: '#F00', borderRadius: 50 }}></View>}
             </View>
           );
         }
@@ -83,20 +100,22 @@ export default function App() {
   return (
     <AutocompleteDropdownContextProvider>
       <Provider store={store}>
-        <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="SignIn" component={SignInScreen} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} />
-            <Stack.Screen name="Profil" component={ProfileScreen} />
-            <Stack.Screen name="Preference" component={PreferenceScreen} />
-            <Stack.Screen name="Compagnon" component={CompagnonScreen} />
-            <Stack.Screen name="Poi" component={PoiScreen} />
-            <Stack.Screen name="Message" component={MessageScreen} />
-            <Stack.Screen name="TabNavigator" component={TabNavigator} />
-            <Stack.Screen name="Event" component={EventScreen} />
-            <Stack.Screen name="NewEvent" component={NewEventScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <PersistGate persistor={persistor}>
+          <NavigationContainer>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="SignIn" component={SignInScreen} />
+              <Stack.Screen name="SignUp" component={SignUpScreen} />
+              <Stack.Screen name="Profil" component={ProfileScreen} />
+              <Stack.Screen name="Preference" component={PreferenceScreen} />
+              <Stack.Screen name="Compagnon" component={CompagnonScreen} />
+              <Stack.Screen name="Poi" component={PoiScreen} />
+              <Stack.Screen name="Message" component={MessageScreen} />
+              <Stack.Screen name="TabNavigator" component={TabNavigator} />
+              <Stack.Screen name="Event" component={EventScreen} />
+              <Stack.Screen name="NewEvent" component={NewEventScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </PersistGate>
       </Provider>
     </AutocompleteDropdownContextProvider>
   );
